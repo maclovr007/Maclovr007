@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Emoji/Product Art Webcam (True Aspect Ratio)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; display: flex; flex-direction: column; min-height: 100vh; background-color: #ffffff; color: #333; }
+        .main-container { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; width: 100%; box-sizing: border-box; position: relative; }
+
+        /* Canvas Styling: Aspect ratio set via JS */
+        #outputCanvas {
+            display: block;
+            max-width: 90vw; /* Limit max width */
+            /* max-height applied via Tailwind class */
+            height: auto;
+            /* aspect-ratio set dynamically by JS */
+            margin-bottom: 1rem; /* Space below canvas */
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            image-rendering: pixelated;
+        }
+        /* --- Rest of the CSS is identical --- */
+        #video, #processCanvas, #snapshotCanvas { display: none; }
+        .btn { font-weight: 600; padding: 0.6rem 1.2rem; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s ease; border: 1px solid transparent; cursor: pointer; }
+        .btn:active { transform: scale(0.97); box-shadow: none; }
+        .btn-start { background-color: #006d77; color: white; border-color: #005f69; } .btn-start:hover { background-color: #005f69; }
+        .btn-stop { background-color: #e76f51; color: white; border-color: #d96040; } .btn-stop:hover { background-color: #d96040; }
+        .btn-save-jpg { background-color: #83c5be; color: #005f69; border-color: #6eafa8; } .btn-save-jpg:hover { background-color: #6eafa8; }
+        .btn-copy-txt { background-color: #e9ecef; color: #333; border-color: #ced4da; } .btn-copy-txt:hover { background-color: #ced4da; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-bottom: 1rem; /* Reduced margin */ }
+        .settings-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.75rem; /* Reduced gap */ margin-bottom: 1rem; /* Reduced margin */ width: 100%; max-width: 700px; /* Slightly wider for more controls */ }
+        .slider-container, .filter-container, .format-container, .aspect-container { text-align: center; color: #555; position: relative; }
+        label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; }
+        #resolutionSlider { cursor: pointer; accent-color: #006d77; width: 150px; max-width: 100%; }
+        #filterSelect, #aspectRatioSelect { /* Style both dropdowns */
+             padding: 0.4rem 0.8rem; border-radius: 6px; border: 1px solid #ced4da;
+             background-color: white; cursor: pointer; font-size: 0.9rem; accent-color: #006d77;
+        }
+        .format-container label { display: inline-block; margin-left: 0.25rem; font-size: 0.9rem; cursor: pointer; }
+        .format-container input[type="checkbox"] { cursor: pointer; accent-color: #006d77; vertical-align: middle; }
+        #messageBox { position: fixed; bottom: 1rem; right: 1rem; background-color: #e0f2f1; color: #004d40; border: 1px solid #b2dfdb; border-radius: 6px; padding: 0.75rem 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 50; display: flex; align-items: center; }
+        #messageBox.hidden { display: none; }
+        #messageBox button { color: #004d40; background: none; border: none; font-weight: bold; margin-left: 0.75rem; cursor: pointer; }
+        #instagramPreviewPopup { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: 300px; max-height: 200px; overflow-y: auto; background-color: #ffffff; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); padding: 10px; font-family: 'Courier New', Courier, monospace; font-size: 8px; line-height: 1.0; white-space: pre; text-align: left; z-index: 60; margin-bottom: 5px; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <h1 class="text-2xl md:text-3xl font-semibold text-[#006d77] mb-4 text-center">
+             Live Webcam Art Studio
+        </h1>
+
+        <canvas id="outputCanvas" class="max-h-[70vh]"></canvas>
+
+        <div class="settings-row">
+             <div class="aspect-container">
+                 <label for="aspectRatioSelect">Aspect Ratio:</label>
+                 <select id="aspectRatioSelect" disabled>
+                     <option value="1/1">Square (1:1)</option>
+                     <option value="9/16">Vertical (9:16)</option>
+                     <option value="camera">Camera Default</option>
+                 </select>
+             </div>
+            <div class="filter-container">
+                 <label for="filterSelect">Style Filter:</label>
+                 <select id="filterSelect" disabled> <option value="biossance">Biossance Style</option>
+                     <option value="general_color">General Color Emojis</option>
+                     <option value="grayscale">Grayscale Emojis</option>
+                     <option value="ascii">Classic ASCII</option>
+                     <option value="invert">Invert Colors</option>
+                 </select>
+            </div>
+            <div class="slider-container">
+                <label for="resolutionSlider">Detail (Lower = More): <span id="resolutionValue">12</span></label>
+                <input type="range" id="resolutionSlider" min="4" max="24" value="12" step="1" disabled> </div>
+             <div class="format-container" id="formatContainerDiv">
+                 <input type="checkbox" id="instagramFormatCheckbox" disabled>
+                 <label for="instagramFormatCheckbox">Format for Instagram</label> <div id="instagramPreviewPopup" class="hidden"></div>
+             </div>
+        </div>
+
+        <div class="controls">
+            <button id="startButton" class="btn btn-start">Start Camera</button>
+            <button id="stopButton" class="btn btn-stop" disabled>Stop Camera</button>
+            <button id="copyTextButton" class="btn btn-copy-txt" disabled>Copy Text</button>
+            <button id="snapshotJpgButton" class="btn btn-save-jpg" disabled>Save Hi-Res (.jpg)</button>
+        </div>
+
+        <video id="video" playsinline autoplay muted></video>
+        <canvas id="processCanvas"></canvas>
+        <canvas id="snapshotCanvas"></canvas>
+        <div id="messageBox" class="hidden">
+            <span id="messageText"></span>
+            <button onclick="document.getElementById('messageBox').classList.add('hidden')">X</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const video = document.getElementById('video');
+        const processCanvas = document.getElementById('processCanvas');
+        const processCtx = processCanvas.getContext('2d', { willReadFrequently: true });
+        const outputCanvas = document.getElementById('outputCanvas');
+        const outputCtx = outputCanvas.getContext('2d');
+        const snapshotCanvas = document.getElementById('snapshotCanvas');
+        const snapshotCtx = snapshotCanvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const copyTextButton = document.getElementById('copyTextButton');
+        const snapshotJpgButton = document.getElementById('snapshotJpgButton');
+        const resolutionSlider = document.getElementById('resolutionSlider');
+        const resolutionValueSpan = document.getElementById('resolutionValue');
+        const filterSelect = document.getElementById('filterSelect');
+        const aspectRatioSelect = document.getElementById('aspectRatioSelect');
+        const instagramFormatCheckbox = document.getElementById('instagramFormatCheckbox');
+        const formatContainerDiv = document.getElementById('formatContainerDiv');
+        const instagramPreviewPopup = document.getElementById('instagramPreviewPopup');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+
+        // --- State variables ---
+        let stream = null;
+        let animationFrameId = null;
+        let currentRepresentationGrid = [];
+        let currentTextGrid = [];
+        let pixelStep = parseInt(resolutionSlider.value, 10);
+        let outputWidth = 0; // Grid width (based on cropped source)
+        let outputHeight = 0; // Grid height (based on cropped source)
+        let imagesLoadedPromise = null;
+        let isVideoReady = false;
+        let currentFilter = filterSelect.value;
+        let currentAspectRatio = aspectRatioSelect.value;
+        let videoAspectRatio = 4 / 3; // Default, updated when video loads
+        let isInstagramFormat = instagramFormatCheckbox.checked;
+        const placeholderImages = {};
+        const INSTAGRAM_MAX_WIDTH = 50;
+
+        // --- Placeholder Image Definitions ---
+        const PLACEHOLDER_INFO = { /* ... */
+            'squalane_img': 'https://placehold.co/60x60/ffffff00/006d77.png?text=Oil', 'rose_oil_img': 'https://placehold.co/60x60/ffffff00/e76f51.png?text=Rose',
+            'gel_img': 'https://placehold.co/60x60/ffffff00/83c5be.png?text=Gel', 'vit_c_img': 'https://placehold.co/60x60/ffffff00/f4a261.png?text=VitC',
+            'spf_img': 'https://placehold.co/60x60/ffffff00/2ec4b6.png?text=SPF'
+         };
+
+        // --- Representation Maps ---
+        const BIOSSANCE_MAP = [ /* ... (Identical map with fallbacks) ... */ { range: [0, 80, 80, 50, 150, 150], representation: 'squalane_img', fallback: '💧' }, { range: [210, 80, 50, 255, 150, 120], representation: 'rose_oil_img', fallback: '🌸' }, { range: [100, 180, 170, 160, 220, 210], representation: 'gel_img', fallback: '🌿' }, { range: [220, 130, 70, 255, 190, 130], representation: 'vit_c_img', fallback: '☀️' }, { range: [0, 180, 160, 80, 255, 210], representation: 'spf_img', fallback: '🧴' }, { color: { r: 255, g: 255, b: 255 }, representation: '✨' }, { color: { r: 240, g: 240, b: 240 }, representation: '🤍' }, { color: { r: 0, g: 109, b: 119 }, representation: '💧' }, { color: { r: 131, g: 197, b: 190 }, representation: '🌿' }, { color: { r: 40, g: 150, b: 70 }, representation: '🌱' }, { color: { r: 231, g: 111, b: 81 }, representation: '🧡' }, { color: { r: 244, g: 162, b: 97 }, representation: '☀️' }, { color: { r: 80, g: 80, b: 80 }, representation: '🌑' }, { color: { r: 0, g: 0, b: 0 }, representation: '⚫️' }, { color: { r: 255, g: 218, b: 185 }, representation: '🧴' }, { color: { r: 210, g: 180, b: 140 }, representation: '🥥' }, { color: { r: 190, g: 150, b: 120 }, representation: '🏽' }, ];
+        const GENERAL_COLOR_EMOJI_MAP = [ /* ... (Identical expanded map) ... */ { color: { r: 255, g: 0, b: 0 }, representation: '🟥' }, { color: { r: 200, g: 0, b: 0 }, representation: '❤️' }, { color: { r: 139, g: 0, b: 0 }, representation: '🌹' }, { color: { r: 255, g: 100, b: 100 }, representation: '🌸' }, { color: { r: 255, g: 192, b: 203 }, representation: '🩷' }, { color: { r: 220, g: 150, b: 160 }, representation: '🌷' }, { color: { r: 255, g: 165, b: 0 }, representation: '🟧' }, { color: { r: 255, g: 120, b: 0 }, representation: '🧡' }, { color: { r: 230, g: 100, b: 0 }, representation: '🎃' }, { color: { r: 240, g: 140, b: 40 }, representation: '🍁'}, { color: { r: 255, g: 215, b: 0 }, representation: '🟨' }, { color: { r: 255, g: 255, b: 100 }, representation: '💛' }, { color: { r: 218, g: 165, b: 32 }, representation: '⭐' }, { color: { r: 255, g: 240, b: 150 }, representation: '💡'}, { color: { r: 0, g: 255, b: 0 }, representation: '🟩' }, { color: { r: 0, g: 180, b: 0 }, representation: '💚' }, { color: { r: 100, g: 200, b: 100 }, representation: '🌿' }, { color: { r: 0, g: 128, b: 0 }, representation: '🌳' }, { color: { r: 150, g: 200, b: 150 }, representation: '🥬'}, { color: { r: 80, g: 150, b: 80 }, representation: '🌲'}, { color: { r: 0, g: 0, b: 255 }, representation: '🟦' }, { color: { r: 0, g: 0, b: 150 }, representation: '💙' }, { color: { r: 100, g: 149, b: 237 }, representation: '💧' }, { color: { r: 0, g: 150, b: 255 }, representation: '🩵' }, { color: { r: 70, g: 130, b: 180 }, representation: '🌊' }, { color: { r: 170, g: 200, b: 255 }, representation: '🧊'}, { color: { r: 0, g: 80, b: 150 }, representation: '🌌'}, { color: { r: 128, g: 0, b: 128 }, representation: '🟪' }, { color: { r: 180, g: 100, b: 180 }, representation: '💜' }, { color: { r: 220, g: 180, b: 255 }, representation: '🦄'}, { color: { r: 100, g: 50, b: 120 }, representation: '🍇'}, { color: { r: 165, g: 42, b: 42 }, representation: '🟫' }, { color: { r: 139, g: 69, b: 19 }, representation: '🤎' }, { color: { r: 100, g: 50, b: 20 }, representation: '🪵'}, { color: { r: 255, g: 225, b: 190 }, representation: '🏻' }, { color: { r: 240, g: 200, b: 160 }, representation: '🏼' }, { color: { r: 210, g: 180, b: 140 }, representation: '🏽' }, { color: { r: 160, g: 120, b: 90 }, representation: '🏾' }, { color: { r: 100, g: 70, b: 50 }, representation: '🏿' }, { color: { r: 255, g: 255, b: 255 }, representation: '✨' }, { color: { r: 245, g: 245, b: 245 }, representation: '⬜️' }, { color: { r: 200, g: 200, b: 200 }, representation: '⚪️' }, { color: { r: 150, g: 150, b: 150 }, representation: '💿' }, { color: { r: 128, g: 128, b: 128 }, representation: '🩶' }, { color: { r: 80, g: 80, b: 80 }, representation: '🌑' }, { color: { r: 40, g: 40, b: 40 }, representation: '⚫️' }, { color: { r: 0, g: 0, b: 0 }, representation: '🖤' }, ];
+        const GRAYSCALE_MAP = ['🖤','⚫️','🌑','🩶','⚪️','🌕','✨'];
+        const ASCII_MAP = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
+
+        // --- Utility Functions ---
+        function showMessage(message) { /* ... */ messageText.textContent = message; messageBox.classList.remove('hidden'); setTimeout(() => { messageBox.classList.add('hidden'); }, 5000); }
+        function colorDistanceSq(r1, g1, b1, r2, g2, b2) { /* ... */ const dR = r1 - r2; const dG = g1 - g2; const dB = b1 - b2; return dR * dR + dG * dG + dB * dB; }
+        function isColorInRange(r, g, b, range) { /* ... */ return r >= range[0] && r <= range[3] && g >= range[1] && g <= range[4] && b >= range[2] && b <= range[5]; }
+        function findRepresentation(r, g, b, map) { /* ... (Identical logic) ... */
+             let isBiossanceMap = (map === BIOSSANCE_MAP); if (isBiossanceMap) { for (const entry of map) { if (entry.range) { if (isColorInRange(r, g, b, entry.range)) { const img = placeholderImages[entry.representation]; return { visual: img ? entry.representation : entry.fallback, text: entry.fallback }; } } } }
+             let minDistanceSq = Infinity; let bestRepresentation = '❓'; for (const entry of map) { if (entry.color) { const c = entry.color; const distanceSq = colorDistanceSq(r, g, b, c.r, c.g, c.b); if (distanceSq < minDistanceSq) { minDistanceSq = distanceSq; bestRepresentation = entry.representation; } } }
+             let visualRepresentation = isBiossanceMap ? bestRepresentation : bestRepresentation; return { visual: visualRepresentation, text: bestRepresentation };
+        }
+        function applyFilterAndMap(r, g, b, filterType) { /* ... (Identical logic) ... */
+            let nr = r, ng = g, nb = b; let brightness = (r + g + b) / 3; if (brightness < 15) return { visual: '🖤', text: '🖤' }; if (brightness > 248) return { visual: '✨', text: '✨' }; let resultChar;
+            switch (filterType) {
+                case 'grayscale': const grayIndex = Math.min(GRAYSCALE_MAP.length - 1, Math.floor(brightness / 256 * GRAYSCALE_MAP.length)); resultChar = GRAYSCALE_MAP[grayIndex]; return { visual: resultChar, text: resultChar };
+                case 'ascii': const asciiIndex = Math.min(ASCII_MAP.length - 1, Math.floor(brightness / 256 * ASCII_MAP.length)); resultChar = ASCII_MAP[ASCII_MAP.length - 1 - asciiIndex]; return { visual: resultChar, text: resultChar };
+                case 'invert': nr = 255 - r; ng = 255 - g; nb = 255 - b; return findRepresentation(nr, ng, nb, GENERAL_COLOR_EMOJI_MAP);
+                case 'general_color': return findRepresentation(nr, ng, nb, GENERAL_COLOR_EMOJI_MAP);
+                case 'biossance': default: return findRepresentation(nr, ng, nb, BIOSSANCE_MAP);
+            }
+        }
+        /** Gets the numerical aspect ratio based on the dropdown selection */
+        function getAspectRatioValue(ratioSelection) {
+             if (ratioSelection === 'camera') {
+                 // Ensure videoAspectRatio is valid before using
+                 return (videoAspectRatio && isFinite(videoAspectRatio)) ? videoAspectRatio : 4/3;
+             }
+             try {
+                 const [width, height] = ratioSelection.split('/').map(Number);
+                 // Basic validation
+                 if (isNaN(width) || isNaN(height) || height === 0) return 1;
+                 return width / height;
+             } catch (e) {
+                 console.error("Invalid aspect ratio string:", ratioSelection);
+                 return 1; // Default to square if invalid
+             }
+        }
+
+        // --- Preload Placeholder Images (returns a Promise) ---
+        function preloadImages() { /* ... (Identical CORS fix version) ... */
+            if (imagesLoadedPromise) { return imagesLoadedPromise; }
+            imagesLoadedPromise = new Promise((resolve, reject) => { console.log("Starting image preload..."); let loadedCount = 0; let errorCount = 0; const totalImages = Object.keys(PLACEHOLDER_INFO).length; if (totalImages === 0) { console.log("No images to preload."); resolve(); return; } const onComplete = () => { if (loadedCount + errorCount === totalImages) { if (errorCount > 0) { console.warn(`Image preload finished with ${errorCount} error(s).`); } else { console.log("Image preload successful."); } resolve(); } }; for (const [key, url] of Object.entries(PLACEHOLDER_INFO)) { const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = () => { loadedCount++; placeholderImages[key] = img; onComplete(); }; img.onerror = () => { errorCount++; placeholderImages[key] = null; console.error(`Failed: ${key}`); onComplete(); }; img.src = url; } }); return imagesLoadedPromise;
+        }
+
+
+        // --- Core Logic ---
+
+        function startProcessingLoop() { /* ... (Identical logic) ... */
+             if (!animationFrameId && stream && isVideoReady && imagesLoadedPromise) { imagesLoadedPromise.then(() => { if (!animationFrameId && stream && isVideoReady) { console.log("Starting processing loop."); animationFrameId = requestAnimationFrame(processFrame); } }).catch(err => { console.error("Error during image preloading:", err); showMessage("Error loading resources. Cannot start processing."); }); } else { if (!animationFrameId) { console.log(`Loop not started: stream=${!!stream}, isVideoReady=${isVideoReady}, imagesLoadedPromise=${!!imagesLoadedPromise}`); } }
+        }
+
+        function processFrame() {
+            if (!stream || !isVideoReady || !imagesLoadedPromise) { animationFrameId = requestAnimationFrame(processFrame); return; }
+
+            // --- Frame processing and drawing logic ---
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+            const sourceAspectRatio = videoWidth / videoHeight;
+            const targetAspectRatio = getAspectRatioValue(currentAspectRatio);
+
+            // --- Calculate Source Crop (sx, sy, sWidth, sHeight) ---
+            let sx = 0, sy = 0, sWidth = videoWidth, sHeight = videoHeight;
+            if (targetAspectRatio > sourceAspectRatio) {
+                // Target is wider than source -> Crop height
+                sHeight = videoWidth / targetAspectRatio;
+                sy = (videoHeight - sHeight) / 2;
+            } else if (targetAspectRatio < sourceAspectRatio) {
+                // Target is narrower than source -> Crop width
+                sWidth = videoHeight * targetAspectRatio;
+                sx = (videoWidth - sWidth) / 2;
+            }
+            // If targetAspectRatio === sourceAspectRatio, no cropping needed (sx=0, sy=0, sWidth=videoWidth, sHeight=videoHeight)
+
+            // Calculate grid dimensions based on the *cropped* source dimensions
+            const currentOutputWidth = Math.max(1, Math.floor(sWidth / pixelStep));
+            const currentOutputHeight = Math.max(1, Math.floor(sHeight / pixelStep));
+            if (currentOutputWidth !== outputWidth || currentOutputHeight !== outputHeight) {
+                outputWidth = currentOutputWidth;
+                outputHeight = currentOutputHeight;
+                 console.log(`Grid dimensions updated (based on crop): ${outputWidth}x${outputHeight}`);
+            }
+
+            // Update processing canvas size to match grid dimensions
+            processCanvas.width = outputWidth;
+            processCanvas.height = outputHeight;
+            // Draw the *cropped* portion of the video onto the processing canvas (downsampling)
+            processCtx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, processCanvas.width, processCanvas.height);
+
+            // Set output canvas aspect ratio based on selection
+            outputCanvas.style.aspectRatio = `${targetAspectRatio * 10000} / 10000`;
+
+            // Set output canvas physical size to match CSS size
+            const displayWidth = outputCanvas.clientWidth;
+            const displayHeight = displayWidth / targetAspectRatio; // Use target ratio for height
+            if (displayWidth > 0 && displayHeight > 0) { outputCanvas.width = displayWidth; outputCanvas.height = displayHeight; }
+            else { animationFrameId = requestAnimationFrame(processFrame); return; } // Skip if no size
+
+            // Recalculate cell size based on the final output canvas dimensions
+            const cellWidth = outputCanvas.width / outputWidth;
+            const cellHeight = outputCanvas.height / outputHeight;
+
+            // Clear and setup context
+            outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+            const emojiFontSize = Math.min(cellWidth, cellHeight) * 0.8;
+            outputCtx.font = `${emojiFontSize}px 'Courier New', Courier, monospace`;
+            outputCtx.textAlign = 'center'; outputCtx.textBaseline = 'middle';
+
+            try {
+                const imageData = processCtx.getImageData(0, 0, processCanvas.width, processCanvas.height); const data = imageData.data;
+                let frameGridVisual = []; let frameGridText = [];
+                for (let y = 0; y < outputHeight; y++) { // Iterate using the *new* outputHeight
+                    let rowVisual = []; let rowText = [];
+                    for (let x = 0; x < outputWidth; x++) { // Iterate using the *new* outputWidth
+                        const index = (y * outputWidth + x) * 4;
+                        const r = data[index]; const g = data[index + 1]; const b = data[index + 2];
+                        const { visual: visualRep, text: textRep } = applyFilterAndMap(r, g, b, currentFilter);
+                        rowVisual.push(visualRep); rowText.push(textRep);
+                        const drawX = x * cellWidth; const drawY = y * cellHeight;
+                        const imageToDraw = placeholderImages[visualRep];
+                        if (imageToDraw && imageToDraw !== 'loading' && currentFilter === 'biossance') { outputCtx.drawImage(imageToDraw, drawX, drawY, cellWidth, cellHeight); }
+                        else { outputCtx.fillText(visualRep, drawX + cellWidth / 2, drawY + cellHeight / 2); }
+                    }
+                    frameGridVisual.push(rowVisual); frameGridText.push(rowText);
+                }
+                currentRepresentationGrid = frameGridVisual; currentTextGrid = frameGridText;
+            } catch (error) { console.error("Error processing frame:", error); if (error.name !== 'SecurityError') { showMessage("Error processing video frame."); } }
+            // --- End of frame processing logic ---
+
+            if (stream) { animationFrameId = requestAnimationFrame(processFrame); } else { animationFrameId = null; }
+        }
+
+
+        async function startStream() { /* ... (Identical reliable camera start logic) ... */
+             if (stream) { console.warn("Stream already active."); return; } console.log("Start button clicked."); try { console.log("Waiting for images to load..."); showMessage("Loading resources..."); await imagesLoadedPromise; console.log("Image loading promise resolved."); showMessage("Resources loaded. Requesting camera..."); } catch (err) { console.error("Image loading failed:", err); showMessage("Error loading resources. Cannot start."); return; } console.log("Requesting camera access..."); try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false }); console.log("Camera access granted."); video.srcObject = stream; video.play().catch(err => { console.error("Error calling video.play():", err); showMessage(`Error playing video: ${err.message}`); stopStream(); }); video.onloadedmetadata = () => { isVideoReady = true; videoAspectRatio = video.videoWidth / video.videoHeight; console.log(`Video metadata loaded: ${video.videoWidth}x${video.videoHeight}, Aspect Ratio: ${videoAspectRatio.toFixed(2)}`); outputCanvas.style.aspectRatio = `${getAspectRatioValue(currentAspectRatio) * 10000} / 10000`; /* Set initial canvas aspect ratio */ startButton.disabled = true; stopButton.disabled = false; snapshotJpgButton.disabled = false; copyTextButton.disabled = false; resolutionSlider.disabled = false; filterSelect.disabled = false; aspectRatioSelect.disabled = false; /* Enable aspect ratio select */ instagramFormatCheckbox.disabled = false; showMessage("Camera started!"); startProcessingLoop(); }; video.onerror = (e) => { console.error("Video element error:", e); showMessage("Error with video stream."); stopStream(); }; } catch (err) { console.error("Error accessing webcam:", err); let errorMsg = `Error starting camera: ${err.name || 'Unknown Error'}`; if (err.message) { errorMsg += ` - ${err.message}`; } try { errorMsg += ` (${JSON.stringify(err)})`; } catch (_) {} if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") { showMessage("Camera permission denied."); } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") { showMessage("No camera found."); } else { showMessage(errorMsg); } startButton.disabled = false; stopButton.disabled = true; snapshotJpgButton.disabled = true; copyTextButton.disabled = true; resolutionSlider.disabled = true; filterSelect.disabled = true; aspectRatioSelect.disabled = true; /* Disable aspect */ instagramFormatCheckbox.disabled = true; stream = null; isVideoReady = false; }
+        }
+
+
+        function stopStream() { /* ... (Disable aspect ratio select) ... */
+            console.log("Stopping stream..."); isVideoReady = false; if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; video.srcObject = null; } if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; console.log("Processing loop stopped.");} if (outputCanvas.width > 0 && outputCanvas.height > 0) { outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height); } currentRepresentationGrid = []; currentTextGrid = []; startButton.disabled = false; stopButton.disabled = true; snapshotJpgButton.disabled = true; copyTextButton.disabled = true; resolutionSlider.disabled = true; filterSelect.disabled = true; aspectRatioSelect.disabled = true; /* Disable aspect */ instagramFormatCheckbox.disabled = true; showMessage("Camera stopped.");
+        }
+
+
+        function saveSnapshotJpeg() {
+             // Snapshot now uses currentRepresentationGrid which is already cropped/sized correctly by processFrame
+             if (currentRepresentationGrid.length === 0 || currentRepresentationGrid[0].length === 0) { showMessage("No art generated yet to save as JPEG."); return; }
+
+             const snapshotGridWidth = currentRepresentationGrid[0].length; // Use actual grid width
+             const snapshotGridHeight = currentRepresentationGrid.length; // Use actual grid height
+
+             const snapshotCellSize = 24; // Fixed cell size for snapshot rendering
+             const snapshotEmojiFontSize = snapshotCellSize * 0.8;
+             const snapshotFont = `${snapshotEmojiFontSize}px 'Courier New', Courier, monospace`;
+
+             let canvasWidth = snapshotGridWidth * snapshotCellSize;
+             let canvasHeight = snapshotGridHeight * snapshotCellSize;
+
+             // --- Dimension Check (same as before) ---
+             const MAX_DIMENSION = 8192; const MAX_AREA = MAX_DIMENSION * MAX_DIMENSION;
+             if (canvasWidth > MAX_DIMENSION || canvasHeight > MAX_DIMENSION || (canvasWidth * canvasHeight > MAX_AREA)) { console.warn(`Calculated snapshot size (${canvasWidth}x${canvasHeight}) exceeds limits. Scaling down.`); const widthScale = canvasWidth > MAX_DIMENSION ? MAX_DIMENSION / canvasWidth : 1; const heightScale = canvasHeight > MAX_DIMENSION ? MAX_DIMENSION / canvasHeight : 1; const areaScale = (canvasWidth * canvasHeight > MAX_AREA) ? Math.sqrt(MAX_AREA / (canvasWidth * canvasHeight)) : 1; const scale = Math.min(widthScale, heightScale, areaScale, 1); canvasWidth = Math.floor(canvasWidth * scale); canvasHeight = Math.floor(canvasHeight * scale); console.log(`Scaled snapshot size to: ${canvasWidth}x${canvasHeight}`); if (canvasWidth <= 0 || canvasHeight <= 0) { showMessage("Cannot create snapshot: Scaled size is invalid."); return; } }
+             snapshotCanvas.width = canvasWidth; snapshotCanvas.height = canvasHeight;
+             // --- End Dimension Check ---
+
+             // Calculate potentially scaled cell/font sizes for drawing
+             const scaledCellWidth = canvasWidth / snapshotGridWidth;
+             const scaledCellHeight = canvasHeight / snapshotGridHeight;
+             const scaledEmojiFontSize = Math.min(scaledCellWidth, scaledCellHeight) * 0.8;
+             const scaledSnapshotFont = `${scaledEmojiFontSize}px 'Courier New', Courier, monospace`;
+
+             // Draw onto snapshot canvas
+             snapshotCtx.fillStyle = '#f8f9fa'; snapshotCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+             snapshotCtx.font = scaledSnapshotFont; snapshotCtx.textAlign = 'center'; snapshotCtx.textBaseline = 'middle';
+             for (let y = 0; y < snapshotGridHeight; y++) { for (let x = 0; x < snapshotGridWidth; x++) { const representation = currentRepresentationGrid[y][x] || '❓'; const drawX = x * scaledCellWidth; const drawY = y * scaledCellHeight; const imageToDraw = placeholderImages[representation]; if (imageToDraw && imageToDraw !== 'loading' && currentFilter === 'biossance') { snapshotCtx.drawImage(imageToDraw, drawX, drawY, scaledCellWidth, scaledCellHeight); } else { snapshotCtx.fillText(representation, drawX + scaledCellWidth / 2, drawY + scaledCellHeight / 2); } } }
+
+             // Export
+             try { const dataUrl = snapshotCanvas.toDataURL('image/jpeg', 1.0); const link = document.createElement('a'); link.href = dataUrl; link.download = `webcam_art_${currentFilter}_hires.jpg`; document.body.appendChild(link); link.click(); document.body.removeChild(link); showMessage(`High-res snapshot saved (${currentFilter})!`); } catch (error) { console.error("Error creating high-res JPEG snapshot:", error); if (error.name === 'SecurityError') { showMessage("Cannot save snapshot due to security restrictions."); } else if (error.message.includes('dimensions') || error.message.includes('size')) { showMessage("Snapshot failed: Image dimensions likely too large for JPEG export."); } else { showMessage("Failed to create high-res JPEG snapshot."); } }
+        }
+
+        /** Generates the text grid, scaled if needed for Instagram format */
+        function generateFormattedText(forInstagram) { /* ... (Identical logic as before) ... */
+             if (currentTextGrid.length === 0) return ""; const sourceGrid = currentTextGrid; const sourceHeight = sourceGrid.length; const sourceWidth = sourceGrid[0]?.length || 0; if (sourceWidth === 0) return ""; let outputGrid = []; if (forInstagram && sourceWidth > INSTAGRAM_MAX_WIDTH) { const skipFactor = sourceWidth / INSTAGRAM_MAX_WIDTH; /*console.log(`Instagram scaling: Width=${sourceWidth}, Max=${INSTAGRAM_MAX_WIDTH}, SkipFactor=${skipFactor.toFixed(2)}`);*/ for (let y = 0; y < sourceHeight; y++) { let scaledRow = []; for (let x = 0; x < INSTAGRAM_MAX_WIDTH; x++) { const sourceX = Math.floor(x * skipFactor); if (sourceX < sourceWidth) { scaledRow.push(sourceGrid[y][sourceX] || ''); } else { scaledRow.push(''); } } outputGrid.push(scaledRow.join('')); } } else { outputGrid = sourceGrid.map(row => row.join('')); } return outputGrid.join('\n');
+        }
+
+        /** Copies the current text representation to the clipboard. */
+        function copyTextToClipboard() { /* ... (Identical logic as before) ... */
+            const textToCopy = generateFormattedText(isInstagramFormat); if (!textToCopy) { showMessage("No text art generated yet to copy."); return; } navigator.clipboard.writeText(textToCopy).then(() => { showMessage(`Art copied to clipboard${isInstagramFormat ? ' (Instagram Format)' : ''}!`); }).catch(err => { console.error('Failed to copy text: ', err); if (err.name === 'NotAllowedError') { showMessage('Clipboard access denied.'); } else { showMessage('Failed to copy art to clipboard.'); } });
+        }
+
+        // --- Event Listeners ---
+        startButton.addEventListener('click', startStream);
+        stopButton.addEventListener('click', stopStream);
+        snapshotJpgButton.addEventListener('click', saveSnapshotJpeg);
+        copyTextButton.addEventListener('click', copyTextToClipboard);
+        resolutionSlider.addEventListener('input', (e) => { pixelStep = parseInt(e.target.value, 10); resolutionValueSpan.textContent = pixelStep; });
+        filterSelect.addEventListener('change', (e) => { currentFilter = e.target.value; console.log(`Filter changed to: ${currentFilter}`); });
+        // Listener for Aspect Ratio change
+        aspectRatioSelect.addEventListener('change', (e) => {
+            currentAspectRatio = e.target.value;
+            console.log(`Aspect ratio changed to: ${currentAspectRatio}`);
+            // Update canvas style immediately (processFrame will handle internal sizing)
+            const targetAspectRatio = getAspectRatioValue(currentAspectRatio);
+            outputCanvas.style.aspectRatio = `${targetAspectRatio * 10000} / 10000`;
+        });
+        instagramFormatCheckbox.addEventListener('change', (e) => { isInstagramFormat = e.target.checked; console.log(`Instagram format: ${isInstagramFormat}`); });
+        // Instagram Preview Hover Events
+        formatContainerDiv.addEventListener('mouseenter', () => { if (!stream || currentTextGrid.length === 0) return; const previewText = generateFormattedText(true); instagramPreviewPopup.textContent = previewText; instagramPreviewPopup.classList.remove('hidden'); });
+        formatContainerDiv.addEventListener('mouseleave', () => { instagramPreviewPopup.classList.add('hidden'); });
+        window.addEventListener('beforeunload', stopStream);
+
+        // --- Initial Setup ---
+        // UI elements start disabled (set in HTML)
+        imagesLoadedPromise = preloadImages(); // Start loading images
+
+    </script>
+
+</body>
+</html>
