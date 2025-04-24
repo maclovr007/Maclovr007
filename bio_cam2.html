@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Biossance Art Webcam Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --biossance-primary: #936F44;
+      --biossance-accent: #006d77;
+      --biossance-bg: #fff6f2;
+      --biossance-muted: #6e6463;
+      --biossance-radius: 4px;
+      --biossance-font: 'Barlow Semi Condensed', 'Inter', Arial, sans-serif;
+    }
+    html, body {
+      height: 100%;
+      margin: 0; padding: 0;
+      background: var(--biossance-bg);
+      color: var(--biossance-muted);
+      font-family: var(--biossance-font);
+    }
+    body {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+    }
+    .main-container {
+      width: 100vw;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center;
+      padding: 0;
+      background: var(--biossance-bg);
+    }
+    .biossance-header {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.2rem 0 0.7rem 0;
+      background: var(--biossance-bg);
+      border-bottom: 1px solid #f3e5d8;
+      margin-bottom: 0.5rem;
+    }
+    .biossance-logo {
+      width: 170px;
+      margin-bottom: 0.2rem;
+    }
+    .biossance-title {
+      font-family: var(--biossance-font);
+      font-weight: 700;
+      color: var(--biossance-primary);
+      font-size: 1.3rem;
+      letter-spacing: 0.05em;
+    }
+    .canvas-container {
+      width: 100vw;
+      flex: 1 1 auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      background: var(--biossance-bg);
+    }
+    #outputCanvas {
+      background: #f8f9fa;
+      border-radius: var(--biossance-radius);
+      box-shadow: 0 2px 8px rgba(147,111,68,0.10);
+      border: 1.5px solid #e5dacd;
+      margin-bottom: 0.7rem;
+      max-width: 98vw;
+      max-height: 70vh;
+      display: block;
+      transition: box-shadow 0.2s;
+    }
+    .swatch-strip {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.25rem;
+      width: 100%;
+      max-width: 350px;
+      min-height: 36px;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+    }
+    .swatch-btn {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      border: 2px solid #e5dacd;
+      background: #fff;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      padding: 0;
+    }
+    .swatch-btn.active {
+      border-color: var(--biossance-accent);
+      box-shadow: 0 0 0 2px #b2dfdb;
+    }
+    .swatch-inner {
+      width: 16px; height: 16px; border-radius: 50%; border: 1px solid #bbb;
+      background: #eee; display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; overflow: hidden;
+    }
+    .swatch-tooltip {
+      visibility: hidden;
+      background: #222; color: #fff; text-align: center;
+      border-radius: 4px; padding: 2px 8px; position: absolute;
+      z-index: 10; bottom: 110%; left: 50%; transform: translateX(-50%);
+      font-size: 0.75rem; opacity: 0; transition: opacity 0.15s; pointer-events: none; white-space: nowrap;
+    }
+    .swatch-btn:hover .swatch-tooltip,
+    .swatch-btn:focus .swatch-tooltip { visibility: visible; opacity: 1; }
+    .settings-row {
+      display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+      gap: 0.7rem; width: 100%; max-width: 700px; margin-bottom: 0.5rem;
+    }
+    .aspect-container, .slider-container, .format-container {
+      text-align: center; color: var(--biossance-muted);
+    }
+    .aspect-buttons { display: flex; gap: 0.5rem; }
+    .aspect-btn {
+      padding: 0.3rem 0.85rem;
+      border-radius: var(--biossance-radius);
+      border: 1px solid #e5dacd;
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.98rem;
+      color: var(--biossance-muted);
+      font-family: var(--biossance-font);
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .aspect-btn.active {
+      background: var(--biossance-primary);
+      border-color: var(--biossance-primary);
+      color: #fff;
+    }
+    .aspect-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    label { font-size: 0.95rem; font-weight: 500; margin-bottom: 0.2rem; color: var(--biossance-primary);}
+    #resolutionSlider { cursor: pointer; accent-color: var(--biossance-accent); width: 120px; max-width: 100%; }
+    .format-container label { display: inline-block; margin-left: 0.25rem; font-size: 0.95rem; cursor: pointer; color: var(--biossance-primary);}
+    .format-container input[type="checkbox"] { cursor: pointer; accent-color: var(--biossance-accent); vertical-align: middle; }
+    .action-controls {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.7rem; margin-top: 0.7rem;
+    }
+    .btn {
+      font-family: var(--biossance-font);
+      font-weight: 600;
+      padding: 0.55rem 1.2rem;
+      border-radius: var(--biossance-radius);
+      box-shadow: 0 1px 2px rgba(147,111,68,0.08);
+      transition: all 0.2s;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+    }
+    .btn:active { transform: scale(0.97); box-shadow: none; }
+    .btn-start {
+      background: var(--biossance-accent); color: #fff; border-color: #005f69;
+    }
+    .btn-stop {
+      background: #e76f51; color: #fff; border-color: #d96040;
+    }
+    .btn-save-jpg {
+      background: #83c5be; color: #005f69; border-color: #6eafa8;
+    }
+    .btn-copy-txt {
+      background: #e5dacd; color: var(--biossance-muted); border-color: #e5dacd;
+    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    #video, #processCanvas, #snapshotCanvas { display: none; }
+    #messageBox {
+      position: fixed; bottom: 1rem; right: 1rem;
+      background: #f8f9fa; color: var(--biossance-primary);
+      border: 1.5px solid #e5dacd; border-radius: var(--biossance-radius);
+      padding: 0.7rem 1.1rem; box-shadow: 0 2px 8px rgba(147,111,68,0.08);
+      z-index: 50; display: flex; align-items: center;
+      font-family: var(--biossance-font);
+    }
+    #messageBox.hidden { display: none; }
+    #messageBox button { color: var(--biossance-primary); background: none; border: none; font-weight: bold; margin-left: 0.75rem; cursor: pointer; }
+    @media (max-width: 600px) {
+      .biossance-header { padding: 0.7rem 0 0.5rem 0; }
+      .biossance-logo { width: 120px; }
+      .biossance-title { font-size: 1.05rem; }
+      #outputCanvas { max-width: 99vw; }
+      .settings-row, .action-controls { gap: 0.35rem; }
+      .swatch-strip { max-width: 99vw; }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="biossance-header">
+      <svg class="biossance-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 139.321 23.328" aria-label="Biossance logo">
+        <g><rect width="1.827" height="22.94" x="15.2" y="0.194" fill="#936F44"/><text x="22" y="18" font-family="Barlow Semi Condensed" font-size="18" fill="#936F44" font-weight="700">BIOSSANCE</text></g>
+      </svg>
+      <span class="biossance-title">Art Webcam Studio</span>
+    </div>
+    <div class="canvas-container">
+      <canvas id="outputCanvas"></canvas>
+    </div>
+    <div class="swatch-strip" id="filterSwatchContainer"></div>
+    <div class="settings-row">
+      <div class="aspect-container">
+        <label>Aspect:</label>
+        <div class="aspect-buttons" id="aspectButtonContainer"></div>
+      </div>
+      <div class="slider-container">
+        <label for="resolutionSlider">Detail: <span id="resolutionValue">12</span></label>
+        <input type="range" id="resolutionSlider" min="4" max="24" value="12" step="1" disabled>
+      </div>
+      <div class="format-container" id="formatContainerDiv">
+        <input type="checkbox" id="instagramFormatCheckbox" disabled>
+        <label for="instagramFormatCheckbox">Instagram</label>
+        <div id="instagramPreviewPopup" class="hidden"></div>
+      </div>
+    </div>
+    <div class="action-controls">
+      <button id="startButton" class="btn btn-start">Start Camera</button>
+      <button id="stopButton" class="btn btn-stop" disabled>Stop Camera</button>
+      <button id="copyTextButton" class="btn btn-copy-txt" disabled>Copy Text</button>
+      <button id="snapshotJpgButton" class="btn btn-save-jpg" disabled>Save Hi-Res (.jpg)</button>
+    </div>
+    <video id="video" playsinline autoplay muted></video>
+    <canvas id="processCanvas"></canvas>
+    <canvas id="snapshotCanvas"></canvas>
+    <div id="messageBox" class="hidden">
+      <span id="messageText"></span>
+      <button onclick="document.getElementById('messageBox').classList.add('hidden')">X</button>
+    </div>
+  </div>
+  <script>
+    // --- Filter Swatches ---
+    const FILTERS = {
+      'biossance': { name: 'Biossance', swatch: ['#936F44', '#e76f51', '#006d77', '#b5338a', '#f4a261'] },
+      'general_color': { name: 'Color Emoji', swatch: ['#e74c3c', '#f39c12', '#f1c40f', '#2ecc71', '#2980b9', '#8e44ad'] },
+      'grayscale': { name: 'Grayscale', swatch: ['#222', '#888', '#ccc', '#fff'] },
+      'ascii': { name: 'ASCII', swatch: ['#333', '#aaa', '#eee'] },
+      'invert': { name: 'Invert', swatch: ['#000', '#fff'] }
+    };
+    const ASPECT_RATIOS = { '1/1': 'Square', '9/16': 'Vertical', 'camera': 'Default' };
+
+    // --- DOM Elements
+    const video = document.getElementById('video');
+    const processCanvas = document.getElementById('processCanvas');
+    const processCtx = processCanvas.getContext('2d', { willReadFrequently: true });
+    const outputCanvas = document.getElementById('outputCanvas');
+    const outputCtx = outputCanvas.getContext('2d');
+    const snapshotCanvas = document.getElementById('snapshotCanvas');
+    const snapshotCtx = snapshotCanvas.getContext('2d');
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const copyTextButton = document.getElementById('copyTextButton');
+    const snapshotJpgButton = document.getElementById('snapshotJpgButton');
+    const resolutionSlider = document.getElementById('resolutionSlider');
+    const resolutionValueSpan = document.getElementById('resolutionValue');
+    const filterSwatchContainer = document.getElementById('filterSwatchContainer');
+    const aspectButtonContainer = document.getElementById('aspectButtonContainer');
+    const instagramFormatCheckbox = document.getElementById('instagramFormatCheckbox');
+    const formatContainerDiv = document.getElementById('formatContainerDiv');
+    const instagramPreviewPopup = document.getElementById('instagramPreviewPopup');
+    const messageBox = document.getElementById('messageBox');
+    const messageText = document.getElementById('messageText');
+
+    // --- State
+    let stream = null, animationFrameId = null, isVideoReady = false;
+    let currentRepresentationGrid = [], currentTextGrid = [];
+    let pixelStep = 12, outputWidth = 0, outputHeight = 0;
+    let currentFilter = 'biossance', currentAspectRatio = '1/1', videoAspectRatio = 4/3;
+    let isInstagramFormat = false;
+    let imagesLoadedPromise = null;
+    const placeholderImages = {};
+    const INSTAGRAM_MAX_WIDTH = 50;
+
+    // --- Placeholder Images for Biossance filter - Using actual Biossance product images
+    const PLACEHOLDER_INFO = {
+      'squalane_img': 'https://pplx-res.cloudinary.com/image/private/user_uploads/tBxxihgurXQhghT/Firm-and-Lift.jpg',
+      'rose_oil_img': 'https://pplx-res.cloudinary.com/image/private/user_uploads/vmSDtHKScUMMsdx/vitamine-c-rose-oil.jpg',
+      'gel_img': 'https://pplx-res.cloudinary.com/image/private/user_uploads/exSQWgkwdWeobru/omega-repair-cream.jpg',
+      'spf_img': 'https://pplx-res.cloudinary.com/image/private/user_uploads/dytVskvXiiUJEEC/lip3.jpg',
+      'vit_c_img': 'https://pplx-res.cloudinary.com/image/private/user_uploads/vmSDtHKScUMMsdx/vitamine-c-rose-oil.jpg'
+    };
+
+    // --- Representation Maps
+    const BIOSSANCE_MAP = [
+      // Gold/amber ranges for Firm and Lift Serum
+      { range: [180, 140, 60, 240, 200, 120], representation: 'squalane_img', fallback: '💧' },
+      // Pink/coral ranges for Vitamin C Rose Oil
+      { range: [210, 80, 50, 255, 150, 120], representation: 'rose_oil_img', fallback: '🌸' },
+      // Green ranges for Omega Repair Cream
+      { range: [0, 100, 80, 80, 160, 140], representation: 'gel_img', fallback: '🌿' },
+      // Purple ranges for Lip Perfector
+      { range: [150, 50, 150, 200, 100, 200], representation: 'spf_img', fallback: '💋' },
+      { color: { r: 255, g: 255, b: 255 }, representation: '✨' },
+      { color: { r: 240, g: 240, b: 240 }, representation: '🤍' },
+      { color: { r: 0, g: 109, b: 119 }, representation: '💧' },
+      { color: { r: 131, g: 197, b: 190 }, representation: '🌿' },
+      { color: { r: 40, g: 150, b: 70 }, representation: '🌱' },
+      { color: { r: 231, g: 111, b: 81 }, representation: '🧡' },
+      { color: { r: 244, g: 162, b: 97 }, representation: '☀️' },
+      { color: { r: 80, g: 80, b: 80 }, representation: '🌑' },
+      { color: { r: 0, g: 0, b: 0 }, representation: '⚫️' },
+      { color: { r: 255, g: 218, b: 185 }, representation: '🧴' },
+      { color: { r: 210, g: 180, b: 140 }, representation: '🥥' },
+      { color: { r: 190, g: 150, b: 120 }, representation: '🏽' }
+    ];
+
+    // --- Expanded Color Emoji Map with more Unicode emoji options for better color, texture, and shape representation
+    const GENERAL_COLOR_EMOJI_MAP = [
+      // Reds
+      { color: { r: 255, g: 0, b: 0 }, representation: '🟥' },
+      { color: { r: 200, g: 0, b: 0 }, representation: '❤️' },
+      { color: { r: 139, g: 0, b: 0 }, representation: '🌹' },
+      { color: { r: 255, g: 100, b: 100 }, representation: '🌸' },
+      { color: { r: 255, g: 192, b: 203 }, representation: '🩷' },
+      { color: { r: 220, g: 150, b: 160 }, representation: '🌷' },
+      { color: { r: 178, g: 34, b: 34 }, representation: '🍎' },
+      { color: { r: 205, g: 92, b: 92 }, representation: '🍄' },
+      { color: { r: 240, g: 128, b: 128 }, representation: '🍓' },
+      { color: { r: 188, g: 63, b: 68 }, representation: '🧣' },
+      
+      // Oranges
+      { color: { r: 255, g: 165, b: 0 }, representation: '🟧' },
+      { color: { r: 255, g: 120, b: 0 }, representation: '🧡' },
+      { color: { r: 230, g: 100, b: 0 }, representation: '🎃' },
+      { color: { r: 240, g: 140, b: 40 }, representation: '🍁' },
+      { color: { r: 255, g: 140, b: 0 }, representation: '🦊' },
+      { color: { r: 255, g: 127, b: 80 }, representation: '🥕' },
+      { color: { r: 255, g: 99, b: 71 }, representation: '🍊' },
+      { color: { r: 233, g: 116, b: 81 }, representation: '🦁' },
+      
+      // Yellows
+      { color: { r: 255, g: 215, b: 0 }, representation: '🟨' },
+      { color: { r: 255, g: 255, b: 100 }, representation: '💛' },
+      { color: { r: 218, g: 165, b: 32 }, representation: '⭐' },
+      { color: { r: 255, g: 240, b: 150 }, representation: '💡' },
+      { color: { r: 255, g: 223, b: 0 }, representation: '🌻' },
+      { color: { r: 240, g: 230, b: 140 }, representation: '🍋' },
+      { color: { r: 255, g: 255, b: 0 }, representation: '🐤' },
+      { color: { r: 189, g: 183, b: 107 }, representation: '🌽' },
+      
+      // Greens
+      { color: { r: 0, g: 255, b: 0 }, representation: '🟩' },
+      { color: { r: 0, g: 180, b: 0 }, representation: '💚' },
+      { color: { r: 100, g: 200, b: 100 }, representation: '🌿' },
+      { color: { r: 0, g: 128, b: 0 }, representation: '🌳' },
+      { color: { r: 150, g: 200, b: 150 }, representation: '🥬' },
+      { color: { r: 80, g: 150, b: 80 }, representation: '🌲' },
+      { color: { r: 60, g: 179, b: 113 }, representation: '🥑' },
+      { color: { r: 46, g: 139, b: 87 }, representation: '🥦' },
+      { color: { r: 0, g: 100, b: 0 }, representation: '🌱' },
+      { color: { r: 34, g: 139, b: 34 }, representation: '🐸' },
+      { color: { r: 143, g: 188, b: 143 }, representation: '🍃' },
+      { color: { r: 0, g: 250, b: 154 }, representation: '🍈' },
+      
+      // Blues
+      { color: { r: 0, g: 0, b: 255 }, representation: '🟦' },
+      { color: { r: 0, g: 0, b: 150 }, representation: '💙' },
+      { color: { r: 100, g: 149, b: 237 }, representation: '💧' },
+      { color: { r: 0, g: 150, b: 255 }, representation: '🩵' },
+      { color: { r: 70, g: 130, b: 180 }, representation: '🌊' },
+      { color: { r: 170, g: 200, b: 255 }, representation: '🧊' },
+      { color: { r: 0, g: 80, b: 150 }, representation: '🌌' },
+      { color: { r: 0, g: 0, b: 139 }, representation: '🔵' },
+      { color: { r: 30, g: 144, b: 255 }, representation: '🐬' },
+      { color: { r: 135, g: 206, b: 235 }, representation: '🐦' },
+      { color: { r: 25, g: 25, b: 112 }, representation: '🌃' },
+      { color: { r: 95, g: 158, b: 160 }, representation: '🧠' },
+      
+      // Purples
+      { color: { r: 128, g: 0, b: 128 }, representation: '🟣' },
+      { color: { r: 180, g: 100, b: 180 }, representation: '💜' },
+      { color: { r: 220, g: 180, b: 255 }, representation: '🦄' },
+      { color: { r: 100, g: 50, b: 120 }, representation: '🍇' },
+      { color: { r: 153, g: 50, b: 204 }, representation: '☂️' },
+      { color: { r: 138, g: 43, b: 226 }, representation: '🔮' },
+      { color: { r: 148, g: 0, b: 211 }, representation: '💫' },
+      { color: { r: 186, g: 85, b: 211 }, representation: '🦹' },
+      { color: { r: 221, g: 160, b: 221 }, representation: '🌂' },
+      { color: { r: 147, g: 112, b: 219 }, representation: '👾' },
+      
+      // Browns
+      { color: { r: 165, g: 42, b: 42 }, representation: '🟫' },
+      { color: { r: 139, g: 69, b: 19 }, representation: '🤎' },
+      { color: { r: 100, g: 50, b: 20 }, representation: '🪵' },
+      { color: { r: 160, g: 82, b: 45 }, representation: '🌰' },
+      { color: { r: 205, g: 133, b: 63 }, representation: '🍂' },
+      { color: { r: 210, g: 105, b: 30 }, representation: '🦊' },
+      { color: { r: 222, g: 184, b: 135 }, representation: '🍞' },
+      { color: { r: 245, g: 222, b: 179 }, representation: '🍪' },
+      { color: { r: 184, g: 134, b: 11 }, representation: '🦁' },
+      { color: { r: 160, g: 120, b: 90 }, representation: '🧸' },
+      
+      // Skin tones
+      { color: { r: 255, g: 225, b: 190 }, representation: '🏻' },
+      { color: { r: 240, g: 200, b: 160 }, representation: '🏼' },
+      { color: { r: 210, g: 180, b: 140 }, representation: '🏽' },
+      { color: { r: 160, g: 120, b: 90 }, representation: '🏾' },
+      { color: { r: 100, g: 70, b: 50 }, representation: '🏿' },
+      
+      // Grays/whites/blacks
+      { color: { r: 255, g: 255, b: 255 }, representation: '⚪' },
+      { color: { r: 245, g: 245, b: 245 }, representation: '💭' },
+      { color: { r: 200, g: 200, b: 200 }, representation: '🤍' },
+      { color: { r: 150, g: 150, b: 150 }, representation: '💿' },
+      { color: { r: 128, g: 128, b: 128 }, representation: '🩶' },
+      { color: { r: 80, g: 80, b: 80 }, representation: '🐺' },
+      { color: { r: 40, g: 40, b: 40 }, representation: '🖤' },
+      { color: { r: 0, g: 0, b: 0 }, representation: '⚫' },
+      
+      // Metallics
+      { color: { r: 212, g: 175, b: 55 }, representation: '🥇' },
+      { color: { r: 192, g: 192, b: 192 }, representation: '🥈' },
+      { color: { r: 205, g: 127, b: 50 }, representation: '🥉' },
+      
+      // Pink spectrum
+      { color: { r: 255, g: 105, b: 180 }, representation: '💕' },
+      { color: { r: 255, g: 20, b: 147 }, representation: '💗' },
+      { color: { r: 219, g: 112, b: 147 }, representation: '💞' },
+      
+      // Textures and patterns
+      { color: { r: 230, g: 230, b: 250 }, representation: '☁️' }, // Light cloud
+      { color: { r: 112, g: 128, b: 144 }, representation: '⛅' }, // Darker cloud
+      { color: { r: 250, g: 240, b: 190 }, representation: '🏜️' }, // Sand
+      { color: { r: 0, g: 51, b: 102 }, representation: '🌌' }  // Night sky
+    ];
+    
+    const GRAYSCALE_MAP = ['🖤','⚫️','🌑','🐺','🩶','💿','🤍','⚪️','✨'];
+    const ASCII_MAP = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
+
+    // --- Utility Functions ---
+    function showMessage(message) {
+      messageText.textContent = message;
+      messageBox.classList.remove('hidden');
+      setTimeout(() => { messageBox.classList.add('hidden'); }, 2000);
+    }
+    function colorDistanceSq(r1, g1, b1, r2, g2, b2) {
+      const dR = r1 - r2; const dG = g1 - g2; const dB = b1 - b2;
+      return dR * dR + dG * dG + dB * dB;
+    }
+    function isColorInRange(r, g, b, range) {
+      return r >= range[0] && r <= range[3] && g >= range[1] && g <= range[4] && b >= range[2] && b <= range[5];
+    }
+    function findRepresentation(r, g, b, map) {
+      let isBiossanceMap = (map === BIOSSANCE_MAP);
+      if (isBiossanceMap) {
+        for (const entry of map) {
+          if (entry.range) {
+            if (isColorInRange(r, g, b, entry.range)) {
+              const img = placeholderImages[entry.representation];
+              return { visual: img ? entry.representation : entry.fallback, text: entry.fallback };
+            }
+          }
+        }
+      }
+      let minDistanceSq = Infinity; let bestRepresentation = '❓';
+      for (const entry of map) {
+        if (entry.color) {
+          const c = entry.color;
+          const distanceSq = colorDistanceSq(r, g, b, c.r, c.g, c.b);
+          if (distanceSq < minDistanceSq) {
+            minDistanceSq = distanceSq;
+            bestRepresentation = entry.representation;
+          }
+        }
+      }
+      let visualRepresentation = isBiossanceMap ? bestRepresentation : bestRepresentation;
+      return { visual: visualRepresentation, text: bestRepresentation };
+    }
+    function applyFilterAndMap(r, g, b, filterType) {
+      let nr = r, ng = g, nb = b;
+      let brightness = (r + g + b) / 3;
+      if (brightness < 15) return { visual: '🖤', text: '🖤' };
+      if (brightness > 248) return { visual: '✨', text: '✨' };
+      let resultChar;
+      switch (filterType) {
+        case 'grayscale':
+          const grayIndex = Math.min(GRAYSCALE_MAP.length - 1, Math.floor(brightness / 256 * GRAYSCALE_MAP.length));
+          resultChar = GRAYSCALE_MAP[grayIndex];
+          return { visual: resultChar, text: resultChar };
+        case 'ascii':
+          const asciiIndex = Math.min(ASCII_MAP.length - 1, Math.floor(brightness / 256 * ASCII_MAP.length));
+          resultChar = ASCII_MAP[ASCII_MAP.length - 1 - asciiIndex];
+          return { visual: resultChar, text: resultChar };
+        case 'invert':
+          nr = 255 - r; ng = 255 - g; nb = 255 - b;
+          return findRepresentation(nr, ng, nb, GENERAL_COLOR_EMOJI_MAP);
+        case 'general_color':
+          return findRepresentation(nr, ng, nb, GENERAL_COLOR_EMOJI_MAP);
+        case 'biossance':
+        default:
+          return findRepresentation(nr, ng, nb, BIOSSANCE_MAP);
+      }
+    }
+    function getAspectRatioValue(ratioSelection) {
+      if (ratioSelection === 'camera') {
+        return (videoAspectRatio && isFinite(videoAspectRatio)) ? videoAspectRatio : 4/3;
+      }
+      try {
+        const [width, height] = ratioSelection.split('/').map(Number);
+        if (isNaN(width) || isNaN(height) || height === 0) return 1;
+        return width / height;
+      } catch (e) {
+        return 1;
+      }
+    }
+    function preloadImages() {
+      if (imagesLoadedPromise) return imagesLoadedPromise;
+      imagesLoadedPromise = new Promise((resolve, reject) => {
+        let loadedCount = 0, errorCount = 0;
+        const totalImages = Object.keys(PLACEHOLDER_INFO).length;
+        if (totalImages === 0) { resolve(); return; }
+        const onComplete = () => { if (loadedCount + errorCount === totalImages) resolve(); };
+        for (const [key, url] of Object.entries(PLACEHOLDER_INFO)) {
+          const img = new Image(); img.crossOrigin = 'anonymous';
+          img.onload = () => { loadedCount++; placeholderImages[key] = img; onComplete(); };
+          img.onerror = () => { errorCount++; placeholderImages[key] = null; onComplete(); };
+          img.src = url;
+        }
+      });
+      return imagesLoadedPromise;
+    }
+
+    // --- Swatch UI Generation
+    function generateFilterSwatches() {
+      filterSwatchContainer.innerHTML = '';
+      for (const [key, filterObj] of Object.entries(FILTERS)) {
+        const btn = document.createElement('button');
+        btn.className = 'swatch-btn';
+        btn.dataset.filter = key;
+        btn.type = 'button';
+        btn.disabled = true;
+        const swatchInner = document.createElement('div');
+        swatchInner.className = 'swatch-inner';
+        if (filterObj.swatch.length === 1) {
+          swatchInner.style.background = filterObj.swatch[0];
+        } else if (filterObj.swatch.length === 2) {
+          swatchInner.style.background = `linear-gradient(90deg, ${filterObj.swatch[0]} 50%, ${filterObj.swatch[1]} 50%)`;
+        } else {
+          swatchInner.style.background = `linear-gradient(90deg, ${filterObj.swatch.map((c,i,a)=>`${c} ${Math.round(i*100/a.length)}%,${c} ${Math.round((i+1)*100/a.length)}%`).join(',')})`;
+        }
+        const tooltip = document.createElement('span');
+        tooltip.className = 'swatch-tooltip';
+        tooltip.textContent = filterObj.name;
+        btn.appendChild(swatchInner);
+        btn.appendChild(tooltip);
+        btn.addEventListener('click', () => {
+          currentFilter = key;
+          updateFilterSwatches();
+        });
+        filterSwatchContainer.appendChild(btn);
+      }
+      updateFilterSwatches();
+    }
+    function updateFilterSwatches() {
+      document.querySelectorAll('.swatch-btn').forEach(btn => {
+        if (btn.dataset.filter === currentFilter) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+    }
+    function generateAspectButtons() {
+      aspectButtonContainer.innerHTML = '';
+      for (const [key, name] of Object.entries(ASPECT_RATIOS)) {
+        const button = document.createElement('button');
+        button.textContent = name;
+        button.classList.add('aspect-btn');
+        button.dataset.aspect = key;
+        button.disabled = true;
+        button.addEventListener('click', () => {
+          currentAspectRatio = key;
+          updateAspectButtons();
+        });
+        aspectButtonContainer.appendChild(button);
+      }
+      updateAspectButtons();
+    }
+    function updateAspectButtons() {
+      document.querySelectorAll('.aspect-btn').forEach(btn => {
+        if (btn.dataset.aspect === currentAspectRatio) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+    }
+
+    // --- Camera Logic
+    async function startStream() {
+      if (stream) return;
+      await imagesLoadedPromise;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        video.srcObject = stream;
+        video.play();
+        video.onloadedmetadata = () => {
+          isVideoReady = true;
+          videoAspectRatio = video.videoWidth / video.videoHeight;
+          enableControls();
+          showMessage("Camera started!");
+          startProcessingLoop();
+        };
+      } catch (err) {
+        showMessage("Camera error or permission denied.");
+        disableControls();
+        stream = null; isVideoReady = false;
+      }
+    }
+    function stopStream() {
+      isVideoReady = false;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+        video.srcObject = null;
+      }
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (outputCanvas.width > 0 && outputCanvas.height > 0) outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+      currentRepresentationGrid = [];
+      currentTextGrid = [];
+      disableControls();
+      showMessage("Camera stopped.");
+    }
+    function enableControls() {
+      document.querySelectorAll('.swatch-btn').forEach(btn => btn.disabled = false);
+      document.querySelectorAll('.aspect-btn').forEach(btn => btn.disabled = false);
+      resolutionSlider.disabled = false;
+      instagramFormatCheckbox.disabled = false;
+      startButton.disabled = true; stopButton.disabled = false;
+      copyTextButton.disabled = false; snapshotJpgButton.disabled = false;
+    }
+    function disableControls() {
+      document.querySelectorAll('.swatch-btn').forEach(btn => btn.disabled = true);
+      document.querySelectorAll('.aspect-btn').forEach(btn => btn.disabled = true);
+      resolutionSlider.disabled = true;
+      instagramFormatCheckbox.disabled = true;
+      startButton.disabled = false; stopButton.disabled = true;
+      copyTextButton.disabled = true; snapshotJpgButton.disabled = true;
+    }
+
+    // --- Main Processing Loop
+    function startProcessingLoop() {
+      if (!animationFrameId && stream && isVideoReady && imagesLoadedPromise) {
+        imagesLoadedPromise.then(() => {
+          if (!animationFrameId && stream && isVideoReady) {
+            animationFrameId = requestAnimationFrame(processFrame);
+          }
+        });
+      }
+    }
+    function processFrame() {
+      if (!stream || !isVideoReady || !imagesLoadedPromise) {
+        animationFrameId = requestAnimationFrame(processFrame);
+        return;
+      }
+      const videoWidth = video.videoWidth;
+      const videoHeight = video.videoHeight;
+      const sourceAspectRatio = videoWidth / videoHeight;
+      const targetAspectRatio = getAspectRatioValue(currentAspectRatio);
+      let sx = 0, sy = 0, sWidth = videoWidth, sHeight = videoHeight;
+      if (targetAspectRatio > sourceAspectRatio) {
+        sHeight = videoWidth / targetAspectRatio;
+        sy = (videoHeight - sHeight) / 2;
+      } else if (targetAspectRatio < sourceAspectRatio) {
+        sWidth = videoHeight * targetAspectRatio;
+        sx = (videoWidth - sWidth) / 2;
+      }
+      const currentOutputWidth = Math.max(1, Math.floor(sWidth / pixelStep));
+      const currentOutputHeight = Math.max(1, Math.floor(sHeight / pixelStep));
+      if (currentOutputWidth !== outputWidth || currentOutputHeight !== outputHeight) {
+        outputWidth = currentOutputWidth;
+        outputHeight = currentOutputHeight;
+      }
+      processCanvas.width = outputWidth;
+      processCanvas.height = outputHeight;
+      processCtx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, processCanvas.width, processCanvas.height);
+      outputCanvas.style.aspectRatio = `${targetAspectRatio * 10000} / 10000`;
+      const displayWidth = outputCanvas.clientWidth;
+      const displayHeight = displayWidth / targetAspectRatio;
+      if (displayWidth > 0 && displayHeight > 0) {
+        outputCanvas.width = displayWidth;
+        outputCanvas.height = displayHeight;
+      } else {
+        animationFrameId = requestAnimationFrame(processFrame); return;
+      }
+      const cellWidth = outputCanvas.width / outputWidth;
+      const cellHeight = outputCanvas.height / outputHeight;
+      outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+      const emojiFontSize = Math.min(cellWidth, cellHeight) * 0.8;
+      outputCtx.font = `${emojiFontSize}px 'Courier New', Courier, monospace`;
+      outputCtx.textAlign = 'center'; outputCtx.textBaseline = 'middle';
+      try {
+        const imageData = processCtx.getImageData(0, 0, processCanvas.width, processCanvas.height); const data = imageData.data;
+        let frameGridVisual = []; let frameGridText = [];
+        for (let y = 0; y < outputHeight; y++) {
+          let rowVisual = []; let rowText = [];
+          for (let x = 0; x < outputWidth; x++) {
+            const index = (y * outputWidth + x) * 4;
+            const r = data[index]; const g = data[index + 1]; const b = data[index + 2];
+            const { visual: visualRep, text: textRep } = applyFilterAndMap(r, g, b, currentFilter);
+            rowVisual.push(visualRep); rowText.push(textRep);
+            const drawX = x * cellWidth; const drawY = y * cellHeight;
+            const imageToDraw = placeholderImages[visualRep];
+            if (imageToDraw && imageToDraw !== 'loading' && currentFilter === 'biossance') {
+              outputCtx.drawImage(imageToDraw, drawX, drawY, cellWidth, cellHeight);
+            } else {
+              outputCtx.fillText(visualRep, drawX + cellWidth / 2, drawY + cellHeight / 2);
+            }
+          }
+          frameGridVisual.push(rowVisual); frameGridText.push(rowText);
+        }
+        currentRepresentationGrid = frameGridVisual; currentTextGrid = frameGridText;
+      } catch (error) { /* ignore */ }
+      if (stream) { animationFrameId = requestAnimationFrame(processFrame); } else { animationFrameId = null; }
+    }
+
+    function saveSnapshotJpeg() {
+      if (currentRepresentationGrid.length === 0 || currentRepresentationGrid[0].length === 0) {
+        showMessage("No art generated yet to save as JPEG."); return;
+      }
+      const snapshotGridWidth = currentRepresentationGrid[0].length;
+      const snapshotGridHeight = currentRepresentationGrid.length;
+      const snapshotCellSize = 24;
+      const snapshotEmojiFontSize = snapshotCellSize * 0.8;
+      const snapshotFont = `${snapshotEmojiFontSize}px 'Courier New', Courier, monospace`;
+      let canvasWidth = snapshotGridWidth * snapshotCellSize;
+      let canvasHeight = snapshotGridHeight * snapshotCellSize;
+      const MAX_DIMENSION = 8192; const MAX_AREA = MAX_DIMENSION * MAX_DIMENSION;
+      if (canvasWidth > MAX_DIMENSION || canvasHeight > MAX_DIMENSION || (canvasWidth * canvasHeight > MAX_AREA)) {
+        const widthScale = canvasWidth > MAX_DIMENSION ? MAX_DIMENSION / canvasWidth : 1;
+        const heightScale = canvasHeight > MAX_DIMENSION ? MAX_DIMENSION / canvasHeight : 1;
+        const areaScale = (canvasWidth * canvasHeight > MAX_AREA) ? Math.sqrt(MAX_AREA / (canvasWidth * canvasHeight)) : 1;
+        const scale = Math.min(widthScale, heightScale, areaScale, 1);
+        canvasWidth = Math.floor(canvasWidth * scale); canvasHeight = Math.floor(canvasHeight * scale);
+        if (canvasWidth <= 0 || canvasHeight <= 0) { showMessage("Cannot create snapshot: Scaled size is invalid."); return; }
+      }
+      snapshotCanvas.width = canvasWidth; snapshotCanvas.height = canvasHeight;
+      const scaledCellWidth = canvasWidth / snapshotGridWidth;
+      const scaledCellHeight = canvasHeight / snapshotGridHeight;
+      const scaledEmojiFontSize = Math.min(scaledCellWidth, scaledCellHeight) * 0.8;
+      const scaledSnapshotFont = `${scaledEmojiFontSize}px 'Courier New', Courier, monospace`;
+      snapshotCtx.fillStyle = '#f8f9fa'; snapshotCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+      snapshotCtx.font = scaledSnapshotFont; snapshotCtx.textAlign = 'center'; snapshotCtx.textBaseline = 'middle';
+      for (let y = 0; y < snapshotGridHeight; y++) {
+        for (let x = 0; x < snapshotGridWidth; x++) {
+          const representation = currentRepresentationGrid[y][x] || '❓';
+          const drawX = x * scaledCellWidth; const drawY = y * scaledCellHeight;
+          const imageToDraw = placeholderImages[representation];
+          if (imageToDraw && imageToDraw !== 'loading' && currentFilter === 'biossance') {
+            snapshotCtx.drawImage(imageToDraw, drawX, drawY, scaledCellWidth, scaledCellHeight);
+          } else {
+            snapshotCtx.fillText(representation, drawX + scaledCellWidth / 2, drawY + scaledCellHeight / 2);
+          }
+        }
+      }
+      try {
+        const dataUrl = snapshotCanvas.toDataURL('image/jpeg', 1.0);
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `webcam_art_${currentFilter}_hires.jpg`;
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        showMessage(`High-res snapshot saved (${currentFilter})!`);
+      } catch (error) { showMessage("Failed to create high-res JPEG snapshot."); }
+    }
+
+    function generateFormattedText(forInstagram) {
+      if (currentTextGrid.length === 0) return "";
+      const sourceGrid = currentTextGrid;
+      const sourceHeight = sourceGrid.length;
+      const sourceWidth = sourceGrid[0]?.length || 0;
+      if (sourceWidth === 0) return "";
+      let outputGrid = [];
+      if (forInstagram && sourceWidth > INSTAGRAM_MAX_WIDTH) {
+        const skipFactor = sourceWidth / INSTAGRAM_MAX_WIDTH;
+        for (let y = 0; y < sourceHeight; y++) {
+          let scaledRow = [];
+          for (let x = 0; x < INSTAGRAM_MAX_WIDTH; x++) {
+            const sourceX = Math.floor(x * skipFactor);
+            if (sourceX < sourceWidth) { scaledRow.push(sourceGrid[y][sourceX] || ''); }
+            else { scaledRow.push(''); }
+          }
+          outputGrid.push(scaledRow.join(''));
+        }
+      } else {
+        outputGrid = sourceGrid.map(row => row.join(''));
+      }
+      return outputGrid.join('\n');
+    }
+    function copyTextToClipboard() {
+      const textToCopy = generateFormattedText(isInstagramFormat);
+      if (!textToCopy) { showMessage("No text art generated yet to copy."); return; }
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        showMessage(`Art copied to clipboard${isInstagramFormat ? ' (Instagram Format)' : ''}!`);
+      }).catch(err => { showMessage('Failed to copy art to clipboard.'); });
+    }
+
+    // --- Event Listeners ---
+    startButton.addEventListener('click', startStream);
+    stopButton.addEventListener('click', stopStream);
+    snapshotJpgButton.addEventListener('click', saveSnapshotJpeg);
+    copyTextButton.addEventListener('click', copyTextToClipboard);
+    resolutionSlider.addEventListener('input', (e) => { pixelStep = parseInt(e.target.value, 10); resolutionValueSpan.textContent = pixelStep; });
+    instagramFormatCheckbox.addEventListener('change', (e) => { isInstagramFormat = e.target.checked; });
+    formatContainerDiv.addEventListener('mouseenter', () => {
+      if (!stream || currentTextGrid.length === 0) return;
+      const previewText = generateFormattedText(true);
+      instagramPreviewPopup.textContent = previewText;
+      instagramPreviewPopup.classList.remove('hidden');
+    });
+    formatContainerDiv.addEventListener('mouseleave', () => { instagramPreviewPopup.classList.add('hidden'); });
+    window.addEventListener('beforeunload', stopStream);
+
+    // --- Swatch and Aspect UI
+    generateFilterSwatches();
+    generateAspectButtons();
+    imagesLoadedPromise = preloadImages();
+
+    // --- Enable swatch and aspect buttons when camera starts
+    function enableSwatchAndAspect() {
+      document.querySelectorAll('.swatch-btn').forEach(btn => btn.disabled = false);
+      document.querySelectorAll('.aspect-btn').forEach(btn => btn.disabled = false);
+    }
+    function disableSwatchAndAspect() {
+      document.querySelectorAll('.swatch-btn').forEach(btn => btn.disabled = true);
+      document.querySelectorAll('.aspect-btn').forEach(btn => btn.disabled = true);
+    }
+    // Enable/disable on camera start/stop
+    startButton.addEventListener('click', enableSwatchAndAspect);
+    stopButton.addEventListener('click', disableSwatchAndAspect);
+    // Aspect ratio change triggers canvas resize
+    aspectButtonContainer.addEventListener('click', () => {
+      outputCanvas.style.aspectRatio = `${getAspectRatioValue(currentAspectRatio) * 10000} / 10000`;
+    });
+
+  </script>
+</body>
+</html>
