@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+</head>
+<body>
+    <script>
+        (function (window) {
+            if (window.addEventListener) {
+                window.addEventListener('message', function (event) {
+                    if (event.data.action == 'set') {
+                        localStorage.setItem(
+                            event.data.name,
+                            event.data.string
+                        );
+                    } else if (event.data.action == 'get') {
+                        var data = localStorage.getItem(event.data.name);
+                        window.parent.postMessage({
+                            action: 'callback',
+                            id: event.data.id,
+                            data: data
+                        }, '*');
+                    } else if (event.data.action == 'remove') {
+                        localStorage.removeItem(
+                            event.data.name
+                        );
+                    } else if (event.data.action == 'all') {
+                        
+                        // var k = [];
+                        // for (var i in localStorage) {
+                        //     k.push(i);
+                        // }
+                        window.parent.postMessage({
+                            action: 'callback',
+                            // data: btoa(JSON.stringify(k))
+                            data:'hello'
+                        }, '*');
+                    }
+                });
+            }
+        }(window));
+    </script>
+
+</body></html>

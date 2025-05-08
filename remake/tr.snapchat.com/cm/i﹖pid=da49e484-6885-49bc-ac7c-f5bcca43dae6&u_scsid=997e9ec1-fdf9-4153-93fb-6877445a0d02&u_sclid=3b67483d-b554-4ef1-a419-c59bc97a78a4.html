@@ -1,0 +1,22 @@
+<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <script async="" src="../../sc-static.net/scevent.min.js"></script><script>
+    (function(win, doc, sdk_url){
+      if(win.snaptr) return;
+      var tr=win.snaptr=function(){
+        tr.handleRequest? tr.handleRequest.apply(tr, arguments):tr.queue.push(arguments);
+      };
+      tr.queue = [];
+      var s='script';
+      var new_script_section=doc.createElement(s);
+      new_script_section.async=!0;
+      new_script_section.src=sdk_url;
+      var insert_pos=doc.getElementsByTagName(s)[0];
+      insert_pos.parentNode.insertBefore(new_script_section, insert_pos);
+    })(window, document, 'https://sc-static.net/scevent.min.js');
+    snaptr('cm', { 'sync_modes': [140] });
+  </script>
+</head>
+<body>
+<iframe id="snap2712801" src="https://tr.snapchat.com/cm/s?bt=1d53c387&amp;pnid=140&amp;cb=1746725320331&amp;u_scsid=d7aff3a5-4d6d-42f1-aa1f-56f0be3ed0f5&amp;u_sclid=7156b2cc-43b2-40fc-948a-cf86144b8585" style="display: none !important; height: 1px !important; overflow: hidden !important; position: absolute !important; width: 1px !important;"></iframe></body></html>

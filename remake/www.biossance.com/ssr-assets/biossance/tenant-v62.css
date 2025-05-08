@@ -1,0 +1,223 @@
+@font-face {
+  font-family: 'arial-fallback';
+  src: local(Arial);
+  size-adjust: 88%;
+  ascent-override: 106%;
+}
+
+body {
+  font-family: 'Barlow Semi Condensed', 'arial-fallback', sans-serif;
+  background-color: #fff6f2;
+}
+
+.header-wrapper header,
+[data-theme='biossance'] .cookies {
+  background-color: #fff;
+}
+
+[data-theme='biossance'] .header-wrapper .usp-banner {
+  padding: 5px 0;
+}
+
+[data-theme='biossance'] .facet-bar {
+  background-color: #fff6f2;
+}
+
+[data-theme='biossance'] .newsletter-bar {
+  background-color: #fff;
+  border: 0;
+}
+
+[data-theme='biossance'] button,
+[data-theme='biossance'] header select {
+  text-transform: inherit;
+}
+
+[data-theme='biossance'] #GlobalMultiButton a,
+[data-theme='biossance'] .categories a {
+  border-color: hsl(var(--p) / 30%);
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme='biossance'] #GlobalMultiButton a:hover,
+[data-theme='biossance'] .categories a:hover {
+  border-color: hsl(var(--p));
+  background-color: rgba(255, 255, 255, 1);
+}
+
+[data-theme='biossance'] #product-gallery,
+[data-theme='biossance'] .product-thumbnail,
+[data-theme='biossance'] .product-item img,
+[data-theme='biossance'] .article img,
+[data-theme='biossance'] .product-images,
+[data-theme='biossance'] .product-images img,
+[data-theme='biossance'] .post-preview img {
+  border-radius: var(--rounded-box);
+  overflow: hidden;
+}
+
+[data-theme='biossance'] .product-item-text {
+  text-align: center;
+}
+
+[data-theme='biossance'] .product-item-price {
+  width: 100%;
+  margin-top: 10px;
+}
+
+[data-theme='biossance'] .product-item-text .sizes {
+  display: none;
+}
+
+[data-theme='biossance'] .product-item-text .sizes {
+  display: none;
+}
+
+[data-theme='biossance'] .product-item-title,
+[data-theme='biossance'] .product-item-price-wrapper,
+[data-theme='biossance'] .email-when-in-stock-modal-button,
+[data-theme='biossance'] .quick-buy {
+  order: 2;
+}
+
+[data-theme='biossance'] .product-item-title {
+  margin-top: 15px;
+}
+
+[data-theme='biossance'] #review-wrapper .btn svg {
+  fill: #fff;
+}
+
+[data-theme='biossance'] .pap-banner {
+  border-color: hsl(var(--pap-border));
+  color: hsl(var(--p));
+  background: #fff;
+  text-transform: uppercase;
+  display: inline-block;
+  width: auto;
+  border-width: 1px;
+}
+
+[data-theme='biossance'] .plp-reviews {
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.855rem;
+  /* 14px */
+  line-height: 1.1rem;
+  /* 20px */
+}
+
+.navigation-item:hover {
+  background-color: none;
+}
+
+.navigation-blog {
+  text-transform: uppercase;
+  word-wrap: unset;
+  font-size: 0.9em;
+}
+
+[data-theme='biossance'] .product-details {
+  padding: 0;
+}
+
+[data-theme='biossance'] .attribute-content ul li::marker {
+  color: hsl(var(--p));
+}
+
+[data-theme='biossance'] .strip-banner:focus {
+  outline: none;
+  color: rgba(123, 93, 56, 0.8);
+  box-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  --tw-ring-inset: inset;
+  --tw-ring-color: #936f43;
+  background: none;
+}
+
+[data-theme='biossance'] .image-card:focus-within {
+  outline: solid;
+  outline-width: 2px;
+  outline-color: auto;
+}
+
+[data-theme='biossance'] .email-when-in-stock-modal-button {
+  bottom: 1px;
+  text-transform: uppercase;
+  top: unset;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    padding: 0.25rem;
+  }
+}
+
+[data-theme='biossance'] .quick-buy,
+[data-theme='biossance'] .email-when-in-stock-modal-button {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  padding: 0.25rem 1rem;
+  z-index: 10;
+  width: 100%;
+  margin-top: 0.5rem;
+
+  &:hover {
+    background-color: #e5e7eb;
+  }
+}
+
+.promo-code-label {
+  color: #333333;
+}
+
+[data-theme='biossance'] .promo-code-add-button {
+  border-color: hsl(var(--p));
+  text-transform: uppercase;
+  color: hsl(var(--p));
+}
+
+.promo-code-add-button:hover {
+  border: 1px solid hsl(var(--sc));
+  box-shadow: inset 0 0 0 1px hsl(var(--sc));
+  text-decoration: underline;
+  background-color: hsl(var(--sf));
+}
+
+.promo-code-add-button:active {
+  background-color: hsl(33 37% 28%);
+  border-color: hsl(33 37% 28%);
+  color: hsl(var(--pc));
+  box-shadow: inset 0 0 0 1px hsl(33 37% 28%);
+}
+
+.promo-code-add-button:focus-visible {
+  border: 1px solid hsl(var(--sc));
+  text-decoration: underline;
+  box-shadow: inset 0 0 0 3px hsl(var(--sc));
+  background-color: hsl(var(--sf));
+  outline: none;
+}
+
+[data-theme='biossance'] .build-your-own-bundle {
+  .hidden-circular-progress-bar {
+    background-color: #fff6f2;
+  }
+
+  .circular-progress-bar::before {
+    background-color: #fff6f2;
+  }
+}
+
+[data-theme='biossance'] .wishlist-plp-icon:not(.inWishlist) {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20stroke%3D%22%23936f43%22%20stroke-width%3D%222px%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20data-e2e%3D%22product_addTo-wishlist-icon%22%3E%3Cpath%20d%3D%22M16.5835%203.20996C15.6451%203.22456%2014.7272%203.48651%2013.9224%203.96935C13.1177%204.4522%2012.4546%205.13885%2012.0001%205.95996C11.5457%205.13885%2010.8826%204.4522%2010.0778%203.96935C9.27308%203.48651%208.35517%203.22456%207.4168%203.20996C5.92091%203.27495%204.51155%203.92934%203.49661%205.03015C2.48168%206.13097%201.94367%207.58873%202.00013%209.08496C2.00013%2012.8741%205.98846%2017.0125%209.33346%2019.8183C10.0803%2020.4459%2011.0246%2020.79%2012.0001%2020.79C12.9757%2020.79%2013.9199%2020.4459%2014.6668%2019.8183C18.0118%2017.0125%2022.0001%2012.8741%2022.0001%209.08496C22.0566%207.58873%2021.5186%206.13097%2020.5036%205.03015C19.4887%203.92934%2018.0793%203.27495%2016.5835%203.20996Z%22%2F%3E%3C%2Fsvg%3E");
+}
+
+[data-theme='biossance'] .wishlist-plp-icon.inWishlist {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20stroke%3D%22%23936f43%22%20stroke-width%3D%222px%22%20fill%3D%22%23936f43%22%20viewBox%3D%220%200%2024%2024%22%20data-e2e%3D%22product_addTo-wishlist-icon%22%3E%3Cpath%20d%3D%22M16.5835%203.20996C15.6451%203.22456%2014.7272%203.48651%2013.9224%203.96935C13.1177%204.4522%2012.4546%205.13885%2012.0001%205.95996C11.5457%205.13885%2010.8826%204.4522%2010.0778%203.96935C9.27308%203.48651%208.35517%203.22456%207.4168%203.20996C5.92091%203.27495%204.51155%203.92934%203.49661%205.03015C2.48168%206.13097%201.94367%207.58873%202.00013%209.08496C2.00013%2012.8741%205.98846%2017.0125%209.33346%2019.8183C10.0803%2020.4459%2011.0246%2020.79%2012.0001%2020.79C12.9757%2020.79%2013.9199%2020.4459%2014.6668%2019.8183C18.0118%2017.0125%2022.0001%2012.8741%2022.0001%209.08496C22.0566%207.58873%2021.5186%206.13097%2020.5036%205.03015C19.4887%203.92934%2018.0793%203.27495%2016.5835%203.20996Z%22%2F%3E%3C%2Fsvg%3E");
+}
+
+[data-theme='biossance'] .inline-ratings,
+[data-theme='biossance'] #ratingSummary {
+  min-height: 18px;
+}
